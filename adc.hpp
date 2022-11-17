@@ -17,35 +17,38 @@
 #define ADC_HPP_
 
 /********************************************************************************
-* adc: Strukt för implementering av AD-omvandlare, som möjliggör avläsning
-*      av insignaler från analoga pinnar.
+* adc: Klass för implementering av AD-omvandlare, som möjliggör avläsning
+*      av insignaler från analoga pinnar, beräkning av on- och off-tid för
+*      PWM-generering (tiden som PWM-styrd utsignal ska vara hög respektive låg).
 ********************************************************************************/
 class adc
 {
 private:
-   uint8_t pin_ = 0xFF;                     /* Analog pin som skall användas för avläsning. */
+   uint8_t pin_ = 0;                        /* Analog pin som skall användas för avläsning. */
+   uint16_t pwm_on_us_ = 0;                 /* On-tid för PWM-generering i mikrosekunder. */
+   uint16_t pwm_off_us_ = 0;                /* Off-tid för PWM-generering i mikrosekunder. */
    static constexpr auto ADC_MAX_ = 1023.0; /* Högsta digitala värde vid AD-omvandling. */
 public:
 
    /********************************************************************************
    * adc: Initierar analog pin för avläsning och AD-omvandling av insignaler.
    *
-   *      - pin : Analog pin som skall läsas för AD-omvandling.
+   *      - pin : Analog pin som skall läsas för AD-omvandling, som antingen kan
+   *              anges som ett tal mellan 0 - 5 eller via konstanter A0 - A5
+                  (som motsvarar heltal 14 - 19).
    ********************************************************************************/
    adc(const uint8_t pin)
    {
-      this->pin_ = pin;
+      if (pin >= 0 && pin <= 5)
+      {
+         this->pin_ = pin;
+      }
+      else if (pin >= 14 && pin <= 19)
+      {
+         this->pin_ = pin - 14;
+      }
+      
       static_cast<void>(this->read());
-      return;
-   }
-
-   /********************************************************************************
-   * ~adc: Nollställer angiven analog pin så att denna inte längre kan användas 
-   *       för AD-omvandling.
-   ********************************************************************************/
-   ~adc(void)
-   {
-      this->pin_ = -1;
       return;
    }
 
@@ -55,6 +58,22 @@ public:
    uint8_t pin(void) const
    {
       return this->pin_;
+   }
+
+   /********************************************************************************
+   * pwm_on_us: Returnerar aktuell on-tid för PWM-generering i mikrosekunder.
+   ********************************************************************************/
+   uint16_t pwm_on_us(void) const
+   {
+      return this->pwm_on_us_;
+   }
+
+   /********************************************************************************
+   * pwm_off_us: Returnerar aktuell off-tid för PWM-generering i mikrosekunder.
+   ********************************************************************************/
+   uint16_t pwm_off_us(void) const
+   {
+      return this->pwm_off_us_;
    }
 
    /********************************************************************************
@@ -91,18 +110,13 @@ public:
    * get_pwm_values: Läser av en analog insignal och beräknar on- och off-tid för
    *                 för PWM-generering, avrundat till närmaste heltal.
    *
-   *                 - pwm_period_ms: PWM-perioden mätt i ms (on-tid + off-tid).
-   *                 - pwm_on_ms    : Referens till adress där beräknad on-tid
-   *                                  för PWM-generering lagras i enheten ms.
-   *                 - pwm_off_ms   : Referens till adress där beräknad off-tid
-   *                                  för PWM-generering lagras i enheten ms.
+   *                 - pwm_period_us: PWM-perioden (on-tid + off-tid) mätt i
+   *                                  mikrosekunder (default = 10 000 us).
    ********************************************************************************/
-   void get_pwm_values(const uint8_t pwm_period_ms,
-                       uint8_t& pwm_on_ms,
-                       uint8_t& pwm_off_ms) const
+   void get_pwm_values(const uint16_t pwm_period_us = 10000)
    {
-      pwm_on_ms = static_cast<uint8_t>(this->duty_cycle() * pwm_period_ms + 0.5);
-      pwm_off_ms = pwm_period_ms - pwm_on_ms;
+      this->pwm_on_us_ = static_cast<uint16_t>(this->duty_cycle() * pwm_period_us + 0.5);
+      this->pwm_off_us_ = pwm_period_us - this->pwm_on_us_;
       return;
    }
 

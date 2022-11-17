@@ -74,6 +74,19 @@ namespace misc
          _delay_ms(1);
       }
    };
+
+   /********************************************************************************
+   * delay_us: Genererar fördröjning mätt i mikrosekunder.
+   *
+   *           - delay_time_us: Referens till angiven fördröjningstid.
+   ********************************************************************************/
+   auto delay_us = [](const uint16_t& delay_time_us)
+   {
+      for (uint16_t i = 0; i < delay_time_us; ++i)
+      {
+         _delay_us(1);
+      }
+   };
 }
 
 #endif /* MISC_HPP_ */

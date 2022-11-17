@@ -14,7 +14,7 @@
 *       vektor för kollektiv PWM-styrning. Vid nedtryckning av tryckknappen
 *       sker avläsning av den analoga insignalen från potentiometern och används 
 *       för att kontrollera ljusstyrkan på lysdiodenrna, övrig tid hålls de
-*       släckta. En PWM-period på 10 ms används.
+*       släckta. En PWM-period på 10 000 us används.
 ********************************************************************************/
 int main(void)
 {
@@ -23,10 +23,7 @@ int main(void)
    led l3(10);
    
    button b1(13); 
-   adc a1(0);
-
-   uint8_t pwm_on_ms = 0;
-   uint8_t pwm_off_ms = 0;
+   adc a1(A0);
 
    led_vector v1;
 
@@ -38,13 +35,13 @@ int main(void)
    {
       if (b1.is_pressed())
       {
-         a1.get_pwm_values(10, pwm_on_ms, pwm_off_ms);
+         a1.get_pwm_values();
 
          v1.on();
-         misc::delay_ms(pwm_on_ms);
+         misc::delay_us(a1.pwm_on_us());
 
          v1.off();
-         misc::delay_ms(pwm_off_ms);
+         misc::delay_us(a1.pwm_off_us());
       }
    }
 
